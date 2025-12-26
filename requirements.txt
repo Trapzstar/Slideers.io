@@ -1,0 +1,28 @@
+# Core Dependencies
+pyautogui>=0.9.53
+speech_recognition>=3.10.0
+pyaudio>=0.2.13
+
+# Voice Recognition Enhancement
+vosk>=0.3.45
+noisereduce>=3.0.0
+
+# Fuzzy Matching & Phonetic
+fuzzywuzzy>=0.18.0
+python-Levenshtein>=0.21.1
+jellyfish>=1.0.0
+
+# UI & Display
+customtkinter>=5.2.0
+InquirerPy>=0.3.4
+rich>=13.7.0
+
+# Windows Integration
+pywin32>=306
+
+# Translation (Optional)
+googletrans==4.0.0rc1
+
+# Utilities
+numpy>=1.24.0
+python-dotenv>=1.0.0
