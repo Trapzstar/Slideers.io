@@ -121,7 +121,8 @@ def find_best_device(devices: List[Dict[str, Any]]) -> int:
     """
     Find best audio device using heuristic scoring.
     
-    Scoring: array (100) > realtek (50) > microphone (30) > multi-channel (20) > usb (15)
+    Scoring: array (100) > realtek (50) > multi-channel (35) > microphone (30) > usb (15)
+    Multi-channel gets higher priority than generic microphone keyword.
     
     Args:
         devices: List of device dictionaries
@@ -140,15 +141,15 @@ def find_best_device(devices: List[Dict[str, Any]]) -> int:
         name_lower = device['name'].lower()
         channels = device.get('channels', 0)
         
-        # Scoring system
+        # Scoring system (adjusted for multi-channel priority)
         if 'array' in name_lower:
             score += 100
         if 'realtek' in name_lower:
             score += 50
-        if 'microphone' in name_lower:
-            score += 30
         if channels >= 2:
-            score += 20
+            score += 35  # Increased from 20 to prioritize over "microphone"
+        if 'microphone' in name_lower or 'mic' in name_lower:
+            score += 30
         if 'usb' in name_lower:
             score += 15
         

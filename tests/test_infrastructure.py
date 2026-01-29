@@ -131,14 +131,11 @@ class ImportTestRunner(TestRunner):
             TestResult with import test outcome
         """
         def test() -> bool:
-            try:
-                parts = item_path.split('.')
-                module = __import__(parts[0])
-                for part in parts[1:-1]:
-                    module = getattr(module, part)
-                getattr(module, parts[-1])
-                return True
-            except (ImportError, AttributeError):
-                return False
+            parts = item_path.split('.')
+            module = __import__(parts[0])
+            for part in parts[1:-1]:
+                module = getattr(module, part)
+            getattr(module, parts[-1])
+            return True
         
         return self.run_test(f"Import: {item_path}", test)
