@@ -16,31 +16,117 @@ parts/
 sdist/
 var/
 wheels/
+pip-wheel-metadata/
+share/python-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+MANIFEST
 
 # Virtual Environment
 venv/
 ENV/
 env/
+.venv
 
-# IDE
+# IDE & Editors
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
+.project
+.pydevproject
+.settings/
+*.sublime-project
+*.sublime-workspace
+
+# Testing & Coverage
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+.hypothesis/
+.cache
+nosetests.xml
+test-results/
+junit/
+
+# Type Checking
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyre/
 
 # Project Specific
 speech_history.txt
 user_voice_config.json
 popup_analytics.json
+command_stats.json
+unrecognized_commands.json
 backup_before_cleanup/
-
-# OS
-.DS_Store
-Thumbs.db
+backups/
+*.session
 
 # Logs
 *.log
+logs/
+*.log.*
+
+# Environment & Secrets
+.env
+.env.local
+.env.*.local
+secrets.json
+config.local.json
+
+# OS Specific
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# Documentation Build
+docs/_build/
+docs/.doctrees/
+site/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb
+
+# Model Files (large files)
+model/vosk-model-*
+*.bin
+*.mdl
+
+# Temporary Files
+*.tmp
+*.temp
+*.bak
+*.swp
+*~.nib
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+
+# Package Files
+*.tar.gz
+*.zip
+*.rar
+
+# Compiled Files
+*.com
+*.class
+*.dll
+*.exe
+*.o
+*.so

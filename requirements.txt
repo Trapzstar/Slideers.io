@@ -1,7 +1,7 @@
 # Core Dependencies
 pyautogui>=0.9.53
-speech_recognition>=3.10.0
-pyaudio>=0.2.13
+SpeechRecognition>=3.10.0
+PyAudio>=0.2.13
 
 # Voice Recognition Enhancement
 vosk>=0.3.45
@@ -17,8 +17,8 @@ customtkinter>=5.2.0
 InquirerPy>=0.3.4
 rich>=13.7.0
 
-# Windows Integration
-pywin32>=306
+# Windows Integration (Windows only)
+pywin32>=306; platform_system=="Windows"
 
 # Translation (Optional)
 googletrans==4.0.0rc1
@@ -27,7 +27,7 @@ googletrans==4.0.0rc1
 numpy>=1.24.0
 python-dotenv>=1.0.0
 
-# Testing & QA (NEW)
+# Testing & QA
 pytest>=7.4.0
 pytest-cov>=4.1.0
 pytest-timeout>=2.1.0
@@ -35,9 +35,12 @@ pytest-mock>=3.11.0
 pytest-watch>=4.2.0
 pytest-html>=3.2.0
 
-# Visualization & Reporting (NEW)
+# Type Checking
+mypy>=1.7.0
+
+# Visualization & Reporting
 matplotlib>=3.7.0
 pandas>=2.0.0
 
-# Data Serialization (NEW)
+# Data Serialization
 dataclasses-json>=0.5.0
