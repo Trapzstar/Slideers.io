@@ -20,22 +20,22 @@ class AccessibilityPopup:
     Enhanced with real-time captioning, multi-language support, and analytics
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.window: Optional[ctk.CTk] = None
-        self.is_visible = False
+        self.is_visible: bool = False
         self.current_content: Dict[str, Any] = {}
         self.thread: Optional[threading.Thread] = None
-        self.running = False
+        self.running: bool = False
 
         # Real-time captioning
         self.caption_thread: Optional[threading.Thread] = None
-        self.caption_running = False
-        self.last_caption_time = time.time()
-        self.caption_buffer = []
-        self.caption_language = "id"  # Default Indonesian
+        self.caption_running: bool = False
+        self.last_caption_time: float = time.time()
+        self.caption_buffer: list = []
+        self.caption_language: str = "id"  # Default Indonesian
 
         # Multi-language support
-        self.available_languages = {
+        self.available_languages: Dict[str, str] = {
             "id": "Bahasa Indonesia",
             "en": "English",
             "es": "Español",
@@ -45,10 +45,10 @@ class AccessibilityPopup:
             "ko": "한국어",
             "zh": "中文"
         }
-        self.current_language = "id"
+        self.current_language: str = "id"
 
         # Analytics
-        self.analytics = {
+        self.analytics: Dict[str, Any] = {
             "start_time": datetime.now(),
             "popup_shown_count": 0,
             "caption_displayed_count": 0,
@@ -61,10 +61,10 @@ class AccessibilityPopup:
                 "caption_update_frequency": 0
             }
         }
-        self.analytics_file = "popup_analytics.json"
+        self.analytics_file: str = "popup_analytics.json"
 
         # Default settings
-        self.settings = {
+        self.settings: Dict[str, Any] = {
             'position': 'bottom-right',  # top-left, top-right, bottom-left, bottom-right
             'size': (300, 150),
             'transparency': 0.85,
@@ -74,7 +74,7 @@ class AccessibilityPopup:
             'theme': 'dark'  # light, dark, system
         }
 
-    def create_overlay_window(self):
+    def create_overlay_window(self) -> None:
         """Create the overlay window with proper settings"""
         if self.window:
             return
@@ -125,7 +125,7 @@ class AccessibilityPopup:
         # Make window click-through (optional)
         self.make_click_through()
 
-    def make_click_through(self):
+    def make_click_through(self) -> None:
         """Make window click-through so it doesn't interfere with presentation"""
         try:
             hwnd = self.window.winfo_id()
@@ -135,7 +135,7 @@ class AccessibilityPopup:
         except:
             pass  # Fallback if pywin32 not available
 
-    def update_position(self):
+    def update_position(self) -> None:
         """Update window position based on settings"""
         if not self.window:
             return
@@ -182,20 +182,20 @@ class AccessibilityPopup:
         if self.settings['auto_hide']:
             self.window.after(self.settings['hide_delay'] * 1000, self.hide_popup)
 
-    def hide_popup(self):
+    def hide_popup(self) -> None:
         """Hide the popup"""
         if self.window and self.is_visible:
             self.window.withdraw()
             self.is_visible = False
 
-    def toggle_popup(self):
+    def toggle_popup(self) -> None:
         """Toggle popup visibility"""
         if self.is_visible:
             self.hide_popup()
         else:
             self.show_popup(self.current_content)
 
-    def update_settings(self, new_settings: Dict[str, Any]):
+    def update_settings(self, new_settings: Dict[str, Any]) -> None:
         """Update popup settings"""
         self.settings.update(new_settings)
 
@@ -209,14 +209,14 @@ class AccessibilityPopup:
             self.content_label.configure(font=ctk.CTkFont(size=self.settings['font_size']))
             self.progress_label.configure(font=ctk.CTkFont(size=self.settings['font_size']-2))
 
-    def start(self):
+    def start(self) -> None:
         """Start the overlay system"""
         if not self.running:
             self.running = True
             self.thread = threading.Thread(target=self._run_overlay, daemon=True)
             self.thread.start()
 
-    def stop(self):
+    def stop(self) -> None:
         """Stop the overlay system"""
         self.running = False
         if self.window:
@@ -224,7 +224,7 @@ class AccessibilityPopup:
             self.window.destroy()
             self.window = None
 
-    def _run_overlay(self):
+    def _run_overlay(self) -> None:
         """Main overlay loop"""
         while self.running:
             if self.window:
@@ -245,7 +245,7 @@ class AccessibilityPopup:
         }
         self.show_popup(content)
 
-    def show_navigation_hint(self, direction: str):
+    def show_navigation_hint(self, direction: str) -> None:
         """Show navigation hint"""
         hints = {
             'next': {'title': '➡️ Next Slide', 'text': 'Moving to next slide...'},
@@ -257,7 +257,7 @@ class AccessibilityPopup:
         content = hints.get(direction, {'title': '🎯 Navigation', 'text': direction})
         self.show_popup(content)
 
-    def show_caption(self, text: str):
+    def show_caption(self, text: str) -> None:
         """Show caption/subtitle"""
         content = {
             'title': '📝 Caption',
@@ -266,7 +266,7 @@ class AccessibilityPopup:
         }
         self.show_popup(content)
 
-    def show_timer(self, elapsed: str, remaining: str = ""):
+    def show_timer(self, elapsed: str, remaining: str = "") -> None:
         """Show presentation timer"""
         content = {
             'title': '⏱️ Timer',
@@ -277,7 +277,7 @@ class AccessibilityPopup:
 
     # ===== REAL-TIME CAPTIONING METHODS =====
 
-    def start_real_time_captioning(self, voice_recognizer):
+    def start_real_time_captioning(self, voice_recognizer: Any) -> None:
         """Start real-time captioning from voice input"""
         if self.caption_running:
             return
@@ -291,18 +291,18 @@ class AccessibilityPopup:
         self.caption_thread.start()
         print("🎤 Real-time captioning started")
 
-    def stop_real_time_captioning(self):
+    def stop_real_time_captioning(self) -> None:
         """Stop real-time captioning"""
         self.caption_running = False
         if self.caption_thread:
             self.caption_thread.join(timeout=1.0)
         print("🎤 Real-time captioning stopped")
 
-    def _captioning_loop(self, voice_recognizer):
+    def _captioning_loop(self, voice_recognizer: Any) -> None:
         """Main captioning loop - DISABLED untuk prevent race condition"""
     
-    print("⚠️  Real-time captioning thread: DISABLED")
-    print("💡 Gunakan caption manual dengan 'show caption' command")
+    print("[WARN] Real-time captioning thread: DISABLED")
+    print("[TIP] Use manual caption with 'show caption' command")
     
     # Don't actually listen, just show placeholder
         
@@ -365,7 +365,7 @@ class AccessibilityPopup:
             print(f"Translation error: {e}")
             return text
 
-    def _update_caption_display(self):
+    def _update_caption_display(self) -> None:
         """Update popup with current caption buffer"""
         if not self.caption_buffer:
             return
@@ -380,7 +380,7 @@ class AccessibilityPopup:
 
     # ===== MULTI-LANGUAGE SUPPORT METHODS =====
 
-    def set_caption_language(self, language_code: str):
+    def set_caption_language(self, language_code: str) -> None:
         """Set caption language"""
         if language_code in self.available_languages:
             old_lang = self.current_language

@@ -1,12 +1,13 @@
 import pyautogui
 from datetime import datetime
+from typing import Dict, Any, Optional
 
 # ============================================
 # KELAS POWERPOINT CONTROLLER
 # ============================================
 class PowerPointController:
-    def __init__(self):
-        self.stats = {
+    def __init__(self) -> None:
+        self.stats: Dict[str, int] = {
             "next": 0, "previous": 0, "stop": 0, 
             "help": 0, "unknown": 0, "total": 0,
             "open_slideshow": 0, "close_slideshow": 0,
@@ -14,12 +15,12 @@ class PowerPointController:
             "caption_on": 0, "caption_off": 0,
             "change_language": 0, "show_analytics": 0
         }
-        self.start_time = datetime.now()
-        self.current_slide = 1
-        self.total_slides = 10  # Default, can be updated
-        self.popup_system = None  # Will be set by main app
+        self.start_time: datetime = datetime.now()
+        self.current_slide: int = 1
+        self.total_slides: int = 10  # Default, can be updated
+        self.popup_system: Optional[Any] = None  # Will be set by main app
         
-    def execute_command(self, command_data):
+    def execute_command(self, command_data: Dict[str, Any]) -> str:
         """Execute PowerPoint command based on detection"""
         self.stats["total"] += 1
         command = command_data["command"]
@@ -138,15 +139,15 @@ class PowerPointController:
         except Exception as e:
             return f"❌ Error eksekusi: {str(e)[:50]}..."
     
-    def set_popup_system(self, popup_system):
+    def set_popup_system(self, popup_system: Optional[Any]) -> None:
         """Set the accessibility popup system"""
         self.popup_system = popup_system
         
-    def set_slide_count(self, total_slides: int):
+    def set_slide_count(self, total_slides: int) -> None:
         """Set total number of slides"""
         self.total_slides = total_slides
         
-    def _update_popup_slide_info(self):
+    def _update_popup_slide_info(self) -> None:
         """Update popup with current slide information"""
         if self.popup_system:
             self.popup_system.show_slide_info(
@@ -155,7 +156,7 @@ class PowerPointController:
                 f"Slide {self.current_slide}"
             )
     
-    def show_statistics(self):
+    def show_statistics(self) -> None:
         """Show statistics"""
         duration = datetime.now() - self.start_time
         minutes = duration.total_seconds() / 60

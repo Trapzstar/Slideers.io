@@ -63,9 +63,9 @@ class ConfigManager:
                         if key in self.DEFAULTS:
                             self.config[key] = value
             
-            print(f"✅ Configuration loaded from {self.env_file}")
+            print(f"[OK] Configuration loaded from {self.env_file}")
         except Exception as e:
-            print(f"⚠️  Error loading .env: {e}")
+            print(f"[WARN] Error loading .env: {e}")
             print(f"   Using default configuration")
     
     def get(self, key, default=None):

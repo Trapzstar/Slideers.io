@@ -2,6 +2,7 @@
 # KELAS VOICE DETECTOR (SMART DETECTION)
 # ============================================
 import time
+from typing import Optional, Dict, List, Any, Tuple, Set
 from input_validator import InputValidator, get_validator
 from feedback_ui import get_feedback_ui
 from config_manager import get_config
@@ -9,14 +10,14 @@ from adaptive_matcher import AdaptiveMatcher
 from phoneme_variants import PhonemeVariants
 
 class SmartVoiceDetector:
-    def __init__(self, config=None, feedback_ui=None):
+    def __init__(self, config: Optional[Dict[str, Any]] = None, feedback_ui: Optional[Any] = None) -> None:
         # Import libraries for fuzzy matching and phonetic algorithms
         try:
             from fuzzywuzzy import fuzz
             import jellyfish
             self.fuzzy_available = True
         except ImportError:
-            print("⚠️  Fuzzy matching libraries not available. Install with: pip install fuzzywuzzy jellyfish")
+            print("[WARN] Fuzzy matching libraries not available. Install with: pip install fuzzywuzzy jellyfish")
             self.fuzzy_available = False
         
         self.validator = get_validator()
@@ -38,12 +39,12 @@ class SmartVoiceDetector:
             },
             "open_slideshow": {
                 "phrases": ["open slide show", "slide show open", "start slide show", "slide show start", "mulai slide show", "slide show mulai", "buka slide show", "slide show buka", "f5", "mulai presentasi", "presentasi mulai", "buka presentasi", "presentasi buka", "start presentation", "presentation start", "open slide", "open side show", "open slideshows"],
-                "weight": 15,  # Ditingkatkan untuk prioritas
+                "weight": 18,  # Increased weight to prioritize 3-word commands
                 "description": "Buka slideshow (F5)"
             },
             "close_slideshow": {
                 "phrases": ["close slide show", "slide show close", "quit slide show", "slide show quit", "keluar slide show", "slide show keluar", "tutup slide show", "slide show tutup", "stop slide show", "slide show stop", "akhiri presentasi", "presentasi akhiri", "tutup presentasi", "presentasi tutup", "end presentation", "presentation end", "exit slideshow", "slideshow exit", "close slide", "close side show", "close slideshows"],
-                "weight": 15,  # Tetap tinggi untuk close
+                "weight": 18,  # Increased weight to prioritize 3-word commands
                 "description": "Tutup slideshow (ESC)"
             },
             "help": {
@@ -100,30 +101,42 @@ class SmartVoiceDetector:
         self.last_execution_time = 0
         self.cooldown_seconds = 2  # Cooldown 2 detik setelah eksekusi
     
-    def _expand_with_variants(self, phrases):
-        """Expand phrase list with phoneme variants"""
+    def _expand_with_variants(self, phrases: List[str]) -> List[str]:
+        """Expand phrase list with phoneme variants - minimal filtering"""
         expanded = set()
         
         for phrase in phrases:
             # Add original
             expanded.add(phrase)
             
-            # Add phoneme variants
+            # Add phoneme variants (minimal filtering to avoid breaking valid matches)
             variants = PhonemeVariants.generate_variants(phrase)
-            expanded.update(variants)
+            # Only skip extremely short variants
+            for variant in variants:
+                if len(variant) >= 2:  # Keep anything 2+ chars
+                    expanded.add(variant)
             
-            # Add regional variants (Indonesian accents)
+            # Add regional variants
             regional = PhonemeVariants.add_regional_variants(phrase, region='mixed')
-            expanded.update(regional)
+            for variant in regional:
+                if len(variant) >= 2:
+                    expanded.add(variant)
         
         return list(expanded)
     
-    def detect(self, text):
-        """Deteksi wake word dengan toleransi lebih (kurangi strictness)"""
+    def detect(self, text: str) -> Optional[Dict[str, Any]]:
+        """
+        Deteksi perintah suara dengan proses:
+        1. User berbicara
+        2. Program mendengarkan (sudah di hybrid_voice_recognizer)
+        3. Menampilkan apa yang didengar
+        4. Mencari perintah terdekat
+        5. Jika tidak ditemukan, tunjukkan saran atau simpan ke file
+        """
         # SECURITY: Validate and sanitize input
         sanitized, error = InputValidator.validate_and_sanitize(text)
         if error:
-            print(f"    ⚠️  Input validation error: {error}")
+            print(f"    [WARN] Input validation error: {error}")
             return None
         
         text = sanitized
@@ -131,161 +144,159 @@ class SmartVoiceDetector:
         # Check cooldown
         current_time = time.time()
         if current_time - self.last_execution_time < self.cooldown_seconds:
-            print(f"    ⏳ Cooldown aktif, tunggu {self.cooldown_seconds - (current_time - self.last_execution_time):.1f} detik lagi")
+            print(f"    [WAIT] Cooldown aktif, tunggu {self.cooldown_seconds - (current_time - self.last_execution_time):.1f} detik lagi")
             return None
         
-        if not text or len(text.strip()) < 2:  # Lebih toleran, minimal 2 karakter
+        if not text or len(text.strip()) < 2:
             return None
         
         text_lower = text.lower().strip()
+        
+        # STEP 3: Menampilkan apa yang didengar
+        print(f"\n    [HEARD] Anda berkata: '{text_lower}'")
+        
         results = []
         
-        # Show confidence display if enabled
-        if self.config.get_bool("CONFIDENCE_DISPLAY"):
-            print(f"    📝 Processing: '{text_lower}'")
-        else:
-            print(f"    📝 Memproses: '{text_lower}'")
-        
+        # STEP 4: Mencari perintah terdekat dengan scoring lebih ketat
         for command, data in self.wake_words.items():
             for phrase in data["phrases"]:
                 score = 0
-                # Exact match frasa lengkap mendapat bonus tertinggi
-                if phrase in text_lower:
-                    score = data["weight"] + 10
-                # Kata kunci spesifik untuk membedakan open/close
-                elif command == "open_slideshow" and any(word in text_lower for word in ["open", "start", "mulai", "buka", "f5"]):
-                    if "slide" in text_lower or "show" in text_lower:
-                        score = data["weight"] + 3
-                elif command == "close_slideshow" and any(word in text_lower for word in ["close", "quit", "keluar", "tutup", "stop", "exit", "end", "akhiri"]):
-                    if "slide" in text_lower or "show" in text_lower:
-                        score = data["weight"] + 3
-                # Partial match kata dari frasa (kurangi untuk menghindari false positive)
-                elif any(word in text_lower for word in phrase.split() if len(word) > 3):  # Kata > 3 huruf
-                    score = data["weight"] - 5  # Lebih dikurangi untuk strictness
                 
-                # Fuzzy Matching (Levenshtein Distance)
-                if self.fuzzy_available and score == 0:
+                # EXACT MATCH - poin tertinggi
+                if phrase == text_lower:
+                    score = data["weight"] + 20
+                # PHRASE CONTAINS - poin tinggi
+                elif phrase in text_lower:
+                    score = data["weight"] + 10
+                # PARTIAL MATCH - dengan batasan ketat untuk membedakan open/close
+                else:
+                    phrase_words = phrase.split()
+                    text_words = text_lower.split()
+                    
+                    # Hitung matching words
+                    matching_words = [w for w in phrase_words if w in text_words]
+                    if len(matching_words) >= 2:  # Minimal 2 kata cocok
+                        score = data["weight"] + (len(matching_words) * 3)
+                    elif len(matching_words) == 1 and len(phrase_words) <= 2:  # 1 kata dari 2 kata phrase
+                        score = data["weight"] + 1
+                
+                # Fuzzy Matching hanya untuk sisa yang score 0
+                if score == 0 and self.fuzzy_available:
                     try:
                         from fuzzywuzzy import fuzz
-                        import jellyfish
-                        
-                        # Hitung similarity ratio
                         similarity = fuzz.ratio(text_lower, phrase)
-                        if similarity >= 80:  # Threshold 80%
-                            score = data["weight"] + (similarity / 10)  # Bonus berdasarkan similarity
-                        
-                        # Phonetic Matching (Soundex/Metaphone)
-                        if score == 0:
-                            text_soundex = jellyfish.soundex(text_lower)
-                            phrase_soundex = jellyfish.soundex(phrase)
-                            if text_soundex == phrase_soundex and len(text_soundex) > 2:
-                                score = data["weight"] + 2  # Bonus untuk phonetic match
-                            
-                            # Metaphone juga
-                            text_metaphone = jellyfish.metaphone(text_lower)
-                            phrase_metaphone = jellyfish.metaphone(phrase)
-                            if text_metaphone == phrase_metaphone and len(text_metaphone) > 2:
-                                score = max(score, data["weight"] + 2)
-                    except Exception as e:
-                        print(f"    ⚠️  Error in fuzzy/phonetic matching: {e}")
+                        if similarity >= 85:  # Threshold ketat 85%
+                            score = data["weight"] + (similarity / 20)
+                    except:
+                        pass
                 
                 if score > 0:
                     results.append({
                         "command": command,
                         "phrase": phrase,
                         "score": score,
-                        "max_score": data["weight"] + 10,
+                        "max_score": data["weight"] + 20,
                         "description": data["description"]
                     })
         
+        # Sort by score - highest first, with tie-breaking:
+        # When scores are equal, prefer commands with exact/closer phrase matches
+        def sort_key(result):
+            score = result["score"]
+            # Secondary sort: prefer exact/longer phrase matches
+            phrase_length = len(result["phrase"].split())
+            phrase_match_quality = 0
+            
+            # Check how well the phrase matches the input
+            phrase_words = set(result["phrase"].split())
+            text_words = set(text_lower.split())
+            matching_words = len(phrase_words & text_words)
+            phrase_match_quality = matching_words / max(len(phrase_words), 1)
+            
+            # Return tuple: (score descending, match quality descending, phrase length descending)
+            return (-score, -phrase_match_quality, -phrase_length)
+        
+        results.sort(key=sort_key)
+        
+        # STEP 5: Jika tidak ada hasil, simpan ke file
         if not results:
-            return None
+            self._save_unrecognized_command(text_lower)
+            print(f"    [NOT FOUND] Perintah tidak dikenali: '{text_lower}'")
+            print(f"    [TIP] Ucapkan: 'next slide', 'back slide', 'open slide show', 'close slide show', 'help menu', atau 'stop program'")
+            return {
+                "command": "unknown",
+                "reason": "No matching command found",
+                "user_input": text_lower
+            }
         
-        # Special handling for conflicting commands
-        text_lower = text.lower()
-        if "captioning" in text_lower or "caption" in text_lower:
-            # Prioritize stop_captioning over stop when captioning is mentioned
-            captioning_results = [r for r in results if r["command"] == "stop_captioning"]
-            if captioning_results:
-                # Boost stop_captioning score if captioning is in the text
-                for result in captioning_results:
-                    result["score"] += 5
-        
-        results.sort(key=lambda x: x["score"], reverse=True)
         best_match = results[0]
         
-        # Get adaptive threshold based on recent performance
-        adaptive_threshold = self.adaptive_matcher.get_adaptive_threshold(
-            command=best_match["command"],
-            score=best_match["score"]
-        )
+        # Cek apakah skor cukup tinggi
+        min_score_threshold = 8.0
         
-        # Show confidence if enabled
-        if self.config.get_bool("CONFIDENCE_DISPLAY"):
-            self.feedback_ui.show_confidence(
-                best_match["command"], 
-                best_match["score"], 
-                best_match["max_score"], 
-                adaptive_threshold
-            )
-        
-        # Check if score meets adaptive threshold
-        if best_match["score"] >= adaptive_threshold:
+        if best_match["score"] >= min_score_threshold:
             # SECURITY: Validate command is safe
             if not InputValidator.validate_command(best_match["command"]):
-                print(f"    ⚠️  Command validation failed: {best_match['command']}")
+                print(f"    [WARN] Command validation failed: {best_match['command']}")
                 return None
             
             self.last_execution_time = current_time
             
+            # Tampilkan hasil detection
+            print(f"    [OK] Cocok: {best_match['description']}")
+            print(f"    [CONF] Keyakinan: {best_match['score']:.1f}/{best_match['max_score']}")
+            
             # Record success for adaptive learning
-            self.adaptive_matcher.record_success(best_match["command"], best_match["score"])
+            if hasattr(self.adaptive_matcher, 'record_success'):
+                self.adaptive_matcher.record_success(best_match["command"], best_match["score"])
             
             return best_match
         
-        # Score between 8-12 suggests we should ask for confirmation
-        elif self.adaptive_matcher.should_ask_confirmation(best_match["score"]):
-            print(f"    ❓ MEDIUM CONFIDENCE: {best_match['description']} ({best_match['score']:.1f}/10)")
-            print(f"    💬 Katakan 'yes' to confirm or anything else to cancel")
-            
-            self.adaptive_matcher.record_failure(text, best_match["score"])
-            
-            return {
-                "command": "confirm_pending",
-                "pending_command": best_match["command"],
-                "score": best_match["score"],
-                "reason": f"Confirmation required (confidence: {best_match['score']:.1f})"
-            }
-        
         else:
-            # Low score - record as failure for adaptive learning
-            self.adaptive_matcher.record_failure(text, best_match["score"])
+            # Score rendah - tunjukkan saran yang mirip
+            print(f"    [LOW] Keyakinan rendah: {best_match['score']:.1f} (butuh >= {min_score_threshold})")
+            print(f"    [TIP] Yang Anda maksud adalah: {best_match['description']}?")
+            print(f"    [INPUT] Ucapkan: 'yes' untuk lanjut, atau ulangi perintah")
+            
+            # Simpan ke file unrecognized
+            self._save_unrecognized_command(
+                text_lower, 
+                best_match["command"],
+                best_match["score"],
+                best_match["description"]
+            )
+            
+            # Record failure
+            if hasattr(self.adaptive_matcher, 'record_failure'):
+                self.adaptive_matcher.record_failure(text, best_match["score"])
             
             return {
                 "command": "unknown",
                 "score": best_match["score"],
-                "reason": f"Score {best_match['score']:.1f} < threshold {adaptive_threshold:.1f} (tolerance mode)"
+                "reason": f"Low confidence: {best_match['score']:.1f}/{min_score_threshold}",
+                "suggestion": best_match["description"],
+                "user_input": text_lower
             }
     
-    def show_help(self):
+    def show_help(self) -> None:
         """Tampilkan bantuan wake words"""
-        print("\n" + "🔊 " + "="*50)
-        print("📋 DAFTAR WAKE WORDS (FRASE LENGKAP):")
+        print("\n" + "[SPEAKER] " + "="*50)
+        print("[LIST] DAFTAR WAKE WORDS (FRASE LENGKAP):")
         print("="*50)
         
         for cmd, data in self.wake_words.items():
-            print(f"\n🎯 {data['description'].upper()}:")
+            print(f"\n[TARGET] {data['description'].upper()}:")
             phrases = ", ".join(data['phrases'])
             print(f"   Frasa: {phrases}")
         
-        print(f"\n⏳ Cooldown: {self.cooldown_seconds} detik setelah setiap eksekusi")
-        print("\n💡 FITUR TOLERANSI:")
+        print(f"\n[WAIT] Cooldown: {self.cooldown_seconds} detik setelah setiap eksekusi")
+        print("\n[INFO] FITUR TOLERANSI:")
         print("   • Fuzzy Matching: Mendeteksi frasa mirip (80%+ similarity)")
         print("   • Phonetic Algorithms: Mendeteksi kata dengan bunyi serupa")
         print("   • Daftar Sinonim: Mendukung variasi pengucapan")
         print("   • Accessibility Popup: Popup bantu untuk audiens difabel")
-        print("\n💡 Gunakan frasa lengkap untuk hasil terbaik")
-        print("\n" + "🎮 " + "="*50)
+        print("\n[TIP] Gunakan frasa lengkap untuk hasil terbaik")
+        print("\n" + "[GAME] " + "="*50)
         print("KONTROL PROGRAM:")
         print("  Voice Mode: Bicara langsung")
         print("  Help      : Katakan 'help menu' untuk bantuan ini")
@@ -296,3 +307,37 @@ class SmartVoiceDetector:
         print("  Exit      : Katakan 'stop program' untuk keluar")
         print("  Ctrl+C    : Emergency stop")
         print("="*50 + "\n")
+    
+    def _save_unrecognized_command(self, user_input: str, closest_match: Optional[str] = None, confidence: float = 0.0, suggestion: Optional[str] = None) -> None:
+        """Simpan perintah yang tidak dikenali ke file untuk analisis"""
+        import json
+        from datetime import datetime
+        
+        try:
+            # Load existing data
+            try:
+                with open("unrecognized_commands.json", "r", encoding="utf-8") as f:
+                    data = json.load(f)
+            except:
+                data = {"unrecognized_commands": [], "metadata": {"total_unrecognized": 0}}
+            
+            # Add new entry
+            entry = {
+                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "user_input": user_input,
+                "closest_match": closest_match or "none",
+                "confidence": round(confidence, 2),
+                "suggestions": [suggestion] if suggestion else []
+            }
+            
+            data["unrecognized_commands"].append(entry)
+            data["metadata"]["total_unrecognized"] = len(data["unrecognized_commands"])
+            data["metadata"]["last_updated"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            
+            # Save back
+            with open("unrecognized_commands.json", "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=2, ensure_ascii=False)
+            
+            print(f"    [SAVED] Disimpan ke unrecognized_commands.json")
+        except Exception as e:
+            print(f"    [WARN] Error saving unrecognized command: {e}")

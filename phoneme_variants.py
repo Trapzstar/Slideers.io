@@ -26,16 +26,16 @@ class PhonemeVariants:
     
     # Word-level substitutions for common commands
     WORD_SUBSTITUTIONS = {
-        'next': ['next', 'neks', 'nekst', 'nex', 'nek', 'naxs'],
-        'slide': ['slide', 'slaid', 'slid', 'slyde', 'slaid'],
-        'back': ['back', 'bak', 'bek', 'bæk', 'bak'],
-        'previous': ['previous', 'previeus', 'privieus', 'previous'],
-        'open': ['open', 'opèn', 'opén', 'opin'],
-        'close': ['close', 'klos', 'klous', 'kloz'],
-        'help': ['help', 'hèlp', 'hélp', 'help'],
-        'stop': ['stop', 'estop', 'istop', 'stap'],
-        'show': ['show', 'sho', 'sow', 'syow'],
-        'menu': ['menu', 'mènu', 'ménu', 'meenu'],
+        'next': ['next', 'neks', 'nekst', 'nex', 'nek', 'naxs','nek','necks','nexx','nekes','nexs','translate','teks'],
+        'slide': ['slide', 'slaid', 'slid', 'slyde', 'slaid','lite','slait','slyd','sled','slets','slet','slets'],
+        'back': ['back', 'bak', 'bek', 'bæk', 'bak', 'beck','bakk','bake','bax','bakc','bag','beg'],
+        'previous': ['previous', 'previeus', 'privieus', 'previous','reviews','previus','preveus','previws','prevews','privius','priviws'],
+        'open': ['open', 'opèn', 'opén', 'opin','open','opeen','openn','opem','opun','aupèn','aupén','aupin','aupen','openn','opem','opun','aupèn','aupén','aupin','aupen','aupenn','aupem','aupun'],
+        'close': ['close', 'klos', 'klous', 'kloz', 'cloze','clous','cloz','kloze','kloas','kloes','kloaz'],
+        'help': ['help', 'hèlp', 'hélp', 'help','hep'],
+        'stop': ['stop', 'estop', 'istop', 'stap', 'stòp','stóp','stopp','stope','stoup','stob','stob','stopp','stope','stoup','stob','stob','stopp','stope','stoup','stob','stob','stopp','stope','stoup','stob','stob','setop'],
+        'show': ['show', 'sho', 'sow', 'syow', 'shou','shoo','shouw','shoa','shoe','shouh','showw'],
+        'menu': ['menu', 'mènu', 'ménu', 'meenu', 'minu','manu','minu','menuu','menou','menue','manou','manue','minou','minue','manou','manue'],
     }
     
     @staticmethod
